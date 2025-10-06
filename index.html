@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bug Bash!</title>
+<style>
+  body {
+    background-color: #111;
+    color: #9f9;
+    font-family: 'Courier New', monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+  }
+  h1 {
+    font-size: 3rem;
+    margin-bottom: 10px;
+  }
+  .scoreboard {
+    display: flex;
+    justify-content: space-between;
+    width: 300px;
+    margin-bottom: 20px;
+    font-size: 1.2rem;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 100px);
+    grid-gap: 15px;
+  }
+  .hole {
+    width: 100px;
+    height: 100px;
+    border: 2px solid #555;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #222;
+    cursor: pointer;
+    transition: background-color 0.1s;
+  }
+  .bug {
+    width: 50px;
+    height: 50px;
+    background-color: #9f9;
+    border-radius: 50%;
+    position: relative;
+  }
+  .bug::before, .bug::after {
+    content: '';
+    position: absolute;
+    background-color: #9f9;
+    border-radius: 50%;
+  }
+  .bug::before {
+    width: 10px;
+    height: 30px;
+    left: -12px;
+    top: 10px;
+  }
+  .bug::after {
+    width: 10px;
+    height: 30px;
+    right: -12px;
+    top: 10px;
+  }
+  .splat {
+    background-color: #9f9;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    clip-path: polygon(50% 0%, 80% 20%, 100% 50%, 80% 80%, 50% 100%, 20% 80%, 0% 50%, 20% 20%);
+  }
+  button {
+    background: none;
+    color: #9f9;
+    border: 1px solid #9f9;
+    padding: 10px 20px;
+    margin-top: 20px;
+    cursor: pointer;
+    border-radius: 10px;
+  }
+</style>
+</head>
+<body>
+  <h1>BUG BASH!</h1>
+  <div class="scoreboard">
+    <div id="score">Score: 0</div>
+    <div id="timer">Time: 30</div>
+  </div>
+  <div class="grid" id="grid"></div>
+  <button id="startBtn">Start Game</button>
+
+  <script>
+    const grid = document.getElementById('grid');
+    const scoreDisplay = document.getElementById('score');
+    const timerDisplay = document.getElementById('timer');
+    const startBtn = document.getElementById('startBtn');
+
+    let score = 0;
+    let timeLeft = 30;
+    let gameInterval;
+    let bugTimeouts = [];
+
+    // Create holes
+    for (let i = 0; i < 9; i++) {
+      const hole = document.createElement('div');
+      hole.classList.add('hole');
+      grid.appendChild(hole);
+    }
+
+    const holes = document.querySelectorAll('.hole');
+
+    function randomHole() {
+      const index = Math.floor(Math.random() * holes.length);
+      return holes[index];
+    }
+
+    function showBug() {
+      const hole = randomHole();
+      if (hole.classList.contains('occupied')) return;
+
+      const bug = document.createElement('div');
+      bug.classList.add('bug');
+      hole.appendChild(bug);
+      hole.classList.add('occupied');
+
+      const timeout = setTimeout(() => {
+        if (hole.contains(bug)) {
+          hole.removeChild(bug);
+          hole.classList.remove('occupied');
+        }
+      }, 1000 + Math.random() * 1000); // bug stays for 1–2 seconds
+
+      bugTimeouts.push(timeout);
+
+      bug.addEventListener('click', () => {
+        score += 10;
+        scoreDisplay.textContent = `Score: ${score}`;
+        bug.classList.remove('bug');
+        bug.classList.add('splat');
+        setTimeout(() => {
+          hole.innerHTML = '';
+          hole.classList.remove('occupied');
+        }, 300);
+      });
+    }
+
+    function startGame() {
+      score = 0;
+      timeLeft = 30;
+      scoreDisplay.textContent = `Score: ${score}`;
+      timerDisplay.textContent = `Time: ${timeLeft}`;
+      startBtn.disabled = true;
+
+      gameInterval = setInterval(() => {
+        showBug();
+      }, 600);
+
+      const countdown = setInterval(() => {
+        timeLeft--;
+        timerDisplay.textContent = `Time: ${timeLeft}`;
+
+        if (timeLeft <= 0) {
+          clearInterval(countdown);
+          clearInterval(gameInterval);
+          bugTimeouts.forEach(clearTimeout);
+          holes.forEach(h => h.innerHTML = '');
+          alert(`Game Over! Final Score: ${score}`);
+          startBtn.disabled = false;
+        }
+      }, 1000);
+    }
+
+    startBtn.addEventListener('click', startGame);
+  </script>
+</body>
+</html>
